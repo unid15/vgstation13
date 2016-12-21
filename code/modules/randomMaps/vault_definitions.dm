@@ -108,3 +108,47 @@ var/list/existing_vaults = list()
 
 /datum/map_element/vault/droneship
 	file_path = "maps/randomvaults/droneship.dmm"
+
+/datum/map_element/vault/vr_disaster
+	file_path = "maps/randomvaults/eternity.dmm"
+	var/datum/map_element/simulation
+
+/datum/map_element/vault/vr_disaster/pre_load()
+	simulation = new /datum/map_element/dungeon/prison
+	load_dungeon(simulation)
+
+/datum/map_element/vault/vr_disaster/initialize(list/objects)
+	.=..()
+
+	var/turf/camera
+	if(!simulation)
+		return
+
+	//Middle turf of the simulation
+	camera = locate(simulation.location.x + round(simulation.width * 0.5), simulation.location.y + round(simulation.height * 0.5), simulation.location.z)
+	for(var/obj/machinery/sleeper/S in objects)
+		S.on_eject.Add(src, "remove_character")
+
+/datum/map_element/vault/vr_disaster/proc/remove_character(list/arguments)
+	if(!simulation)
+		return
+
+	var/obj/machinery/sleeper/S = arguments["src"]
+	if(!istype(S))
+		return
+	S.on_eject.Remove("\ref[src]:remove_character")
+
+	var/list/characters = list()
+
+	for(var/turf/T in block(simulation.location, locate(simulation.location.x + simulation.width, simulation.location.y + simulation.height, simulation.location.z)))
+		for(var/mob/living/carbon/human/H in T)
+			characters.Add(H)
+
+	var/mob/living/carbon/human/H = pick(characters)
+
+	animate(H, alpha = 0, time = 20)
+	spawn(20)
+		qdel(H)
+
+/datum/map_element/dungeon/simulation
+	file_path = "maps/randomvaults/dungeons/simulation.dmm"

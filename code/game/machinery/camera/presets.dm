@@ -13,6 +13,9 @@
 	upgradeXRay()
 	update_icon()
 
+/obj/machinery/camera/xray/invisible
+	invisibility = 100
+
 // MOTION
 
 /obj/machinery/camera/motion/New()

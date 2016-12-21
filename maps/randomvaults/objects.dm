@@ -247,6 +247,67 @@
 	name = "paper- 'IOU'"
 	info = "I owe you a rod of destruction. Redeemable at Milliway's at the end of time."
 
+/obj/item/weapon/paper/vault/vr_logs
+	name = "paper - system logs"
+	info = {"
+	5.15.12.1113: loaded configuration: C_TRAVEL.a
+	5.15.12.1114: virtual environment set up
+	5.15.12.1114: starting a system check
+	5.15.12.1114: system check performed successfully (0 warnings)
+	5.15.12.1116: neural link established
+	5.15.12.1116: neural link established
+	5.15.12.1116: neural link established
+	5.15.12.1116: neural link established
+	5.15.12.1116: neural link established
+	5.15.12.1117: neural link established
+	5.15.12.1205: brain scan of 6 occupants finished successfully
+	5.15.12.1220: simulation loaded (E1LA2001)
+	5.15.12.1220: full transfer of 6 occupants to VLR mode completed (hybernation enabled, time dilation 1:1)
+	5.16.2.7500: power to primary systems lost. diverting backup power to life support machinery
+	5.16.2.7502: power to primary systems restored. resetting virtual environment and performing a check-up...
+	5.16.2.7503: WARNING: configuration settings corrupted and no backup found. Loading default configuration...
+	5.16.2.7503: loaded configuration: C_DEFAULT.a
+	5.16.2.7504: virtual environment set up
+	5.16.2.7504:  starting a system check
+	5.16.2.7504: system check performed successfully (1 warning)
+	5.16.2.7506: simulation loaded (EMPTY)
+	5.16.2.7506: full transfer of 6 occupants to VLR mode completed (hybernation enabled, time dilation 1:1800000)
+	9.1.1.1: system check performed successfully (0 warnings)
+	13.1.1.1: system check performed successfully (0 warnings)
+	13.11.5.12: occupants have been inactive for too long (5.666667e6 sol years). scheduling medical check-up...
+	13.11.5.121: physical condition of occupants: 6 alive
+	"}
+
+/obj/machinery/computer/fluff/virtual_reality
+	name = "VLR interface console"
+	icon = 'icons/obj/computer.dmi'
+	icon_state = "ai-fixer"
+
+	light_color = LIGHT_COLOR_PINK
+
+	var/paper_left = 10
+	var/turf/camera = null
+
+/obj/machinery/computer/fluff/virtual_reality/attack_hand(mob/user)
+	if(issilicon(user))
+		to_chat(user, "<span class='notice'>You are unable to interact with this old-fashioned computer.</span>")
+		return
+
+	var/choice = alert(user, "There is only one unlocked button on this computer.", "[src]", "Print logs", "Cancel")
+	switch(choice)
+		if("Print logs")
+			if(paper_left > 0)
+				new /obj/item/weapon/paper/vault/vr_logs
+				paper_left--
+			else
+				to_chat(user, "<span class='info'>Out of paper.</span>")
+				return
+
+/obj/machinery/computer/security/telescreen/entertainment/vr
+	name = "virtual reality monitor"
+	desc = "A small screen that shows the current state of the virtual world and its inhabitants."
+	network = list("VR")
+
 /obj/machinery/telecomms/relay/preset/vault_listening
 	id = "syndicate relay"
 	hide = 1

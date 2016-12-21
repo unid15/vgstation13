@@ -198,9 +198,12 @@
 
 	var/no_console = 0
 
+	var/event/on_eject
+
 /obj/machinery/sleeper/New()
 	..()
 	RefreshParts()
+	on_eject = new(owner = src)
 
 	spawn( 5 )
 		var/turf/t
@@ -231,6 +234,9 @@
 /obj/machinery/sleeper/Destroy()
 
 	go_out() //Eject everything
+
+	qdel(on_eject)
+	on_eject = null
 
 	. = ..()
 
@@ -532,9 +538,17 @@
 		x.forceMove(src.loc)
 	occupant.forceMove(exit)
 	occupant.reset_view()
+	INVOKE_EVENT(on_eject, list("src" = src, "ejected" = occupant))
 	occupant = null
 	update_icon()
 	return 1
+
+/obj/machinery/sleeper/proc/go_inside(mob/M)
+	M.forceMove(src)
+	M.reset_view()
+	occupant = M
+	connected.process()
+
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user as mob, chemical, amount)
 	if(!src.occupant)

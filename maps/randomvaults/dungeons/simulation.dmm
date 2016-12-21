@@ -1,0 +1,23 @@
+"a" = (/turf/unsimulated/floor/mars,/area)
+"b" = (/turf/simulated/shuttle/wall,/area)
+"c" = (/turf/unsimulated/floor{icon_state = "magenta"},/area)
+"d" = (/obj/effect/landmark/corpse/chef,/turf/unsimulated/floor{icon_state = "magenta"},/area)
+"e" = (/obj/machinery/camera/xray/invisible{network = list("VR")},/turf/unsimulated/floor{icon_state = "magenta"},/area)
+
+(1,1,1) = {"
+aaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaa
+aabbbbbbbbbbbaa
+aabcccccccccbaa
+aabcccccccccbaa
+aabccdcdcdccbaa
+aabcccccccccbaa
+aabcccceccccbaa
+aabccdcdcdccbaa
+aabcccccccccbaa
+aabcccccccccbaa
+aabcccccccccbaa
+aabbbbbbbbbbbaa
+aaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaa
+"}

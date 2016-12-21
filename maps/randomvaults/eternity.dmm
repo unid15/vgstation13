@@ -1,0 +1,36 @@
+"a" = (/turf/space,/area)
+"b" = (/turf/simulated/shuttle/wall{tag = "icon-swall_s6"; icon_state = "swall_s6"},/area)
+"c" = (/obj/machinery/door/airlock/external,/turf/simulated/shuttle/floor4,/area)
+"d" = (/turf/simulated/shuttle/wall{icon_state = "swall12"},/area)
+"e" = (/turf/simulated/shuttle/wall,/area)
+"f" = (/turf/simulated/shuttle/wall{icon_state = "swall_s10"},/area)
+"g" = (/turf/simulated/shuttle/wall{icon_state = "swall3"},/area)
+"h" = (/turf/simulated/shuttle/floor4,/area)
+"i" = (/obj/machinery/door/airlock/hatch,/turf/simulated/shuttle/floor4,/area)
+"j" = (/obj/machinery/sleeper/no_console,/turf/simulated/shuttle/floor4,/area)
+"k" = (/obj/structure/shuttle/engine/heater{dir = 4},/turf/simulated/floor/plating/airless/damaged,/area)
+"l" = (/obj/machinery/computer/security/telescreen/entertainment/vr{pixel_x = -32},/turf/simulated/shuttle/floor4,/area)
+"m" = (/obj/structure/grille,/obj/structure/window/reinforced{dir = 4},/obj/structure/window/reinforced{dir = 8},/obj/structure/window/reinforced{dir = 1},/turf/simulated/shuttle/plating,/area)
+"n" = (/obj/structure/shuttle/engine/heater{dir = 4},/turf/simulated/floor/plating/airless,/area)
+"o" = (/obj/structure/grille,/obj/structure/window/reinforced{dir = 4},/obj/structure/window/reinforced{dir = 8},/turf/simulated/shuttle/plating,/area)
+"p" = (/turf/simulated/floor/plating/airless/damaged,/area)
+"q" = (/obj/structure/grille,/obj/structure/window/reinforced{dir = 4},/obj/structure/window/reinforced{dir = 8},/obj/structure/window/reinforced,/turf/simulated/shuttle/plating,/area)
+"r" = (/obj/structure/lattice,/turf/space,/area)
+"s" = (/obj/machinery/computer/fluff/virtual_reality,/turf/simulated/shuttle/floor4,/area)
+"t" = (/turf/simulated/shuttle/wall{tag = "icon-swall_s5"; icon_state = "swall_s5"},/area)
+"u" = (/turf/simulated/shuttle/wall{tag = "icon-swall_s9"; icon_state = "swall_s9"},/area)
+
+(1,1,1) = {"
+aaaaaaaaaaaa
+aaaaaaaaaaaa
+aabcdededfaa
+aaghhhihjeka
+aaelhhmhjgna
+aaghhhohjepa
+aaelhhohjgaa
+aaghhhqhjera
+aaeshhghjgnr
+aatdededeuaa
+aaaaaaaaaaaa
+aaaaaaaaaaaa
+"}
