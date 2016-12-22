@@ -26,6 +26,12 @@ var/global/list/existing_typesof_cache = list()
 
 		if(!initial(A.icon_state) || !initial(A.icon)) //No icon or icon_state -> into the trash it goes
 			L.Remove(checked_type)
+			continue
+
+		var/list/IS = icon_states(initial(A.icon))
+		if(!IS.Find(initial(A.icon_state))) //Icon state is set, but not in the icon
+			L.Remove(checked_type)
+			continue
 
 	existing_typesof_cache[path] = L.Copy()
 

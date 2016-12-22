@@ -334,6 +334,8 @@ var/MAX_EXPLOSION_RANGE = 14
 #define NOJAUNT		1
 #define NO_MINIMAP  2 //Invisible to minimaps (fuck minimaps)
 
+//area-only flags
+#define NO_PORTALS  1 //Can't teleport or create portals
 
 //slots
 #define slot_back 1
