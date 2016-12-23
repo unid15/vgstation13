@@ -28,7 +28,7 @@
 /obj/item/bluespace_crystal/proc/blink_mob(var/mob/living/L)
 	var/area/A = get_area(src)
 
-	if(A.flags & NO_TELEPORT)
+	if(A.flags & NO_PORTALS)
 		to_chat(L, "<span class='notice'>Your head spins for a second.</span>")
 		return
 

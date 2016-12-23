@@ -15,8 +15,6 @@
 	var/list/to_spawn = list()
 
 /obj/map/spawner/perform_spawn()
-
-	var/obj/spawned
 	for(amount, amount, amount--)
 		if(prob(chance))
 			create_item(pick(to_spawn))

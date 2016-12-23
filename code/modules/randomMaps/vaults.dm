@@ -41,9 +41,15 @@
 
 	var/list/list_of_vault_spawners = shuffle(typesof(/area/random_vault) - /area/random_vault)
 	var/list/list_of_vaults = typesof(/datum/map_element/vault) - /datum/map_element/vault
+	var/list/priority_vaults = list()
 
 	for(var/vault_path in list_of_vaults) //Turn a list of paths into a list of objects
-		list_of_vaults.Add(new vault_path)
+		var/datum/map_element/vault/ME = new vault_path
+		list_of_vaults.Add(ME)
+
+		if(ME.guaranteed_spawn)
+			priority_vaults.Add(ME)
+
 		list_of_vaults.Remove(vault_path)
 
 	//Start processing the list of vaults
@@ -104,7 +110,12 @@
 			vault_y = TURF.y
 			vault_z = TURF.z
 
-			var/datum/map_element/vault/new_vault = pick(list_of_vaults) //Pick a random path from list_of_vaults (like /datum/vault/spacegym)
+			var/datum/map_element/vault/new_vault
+			if(priority_vaults.len)
+				new_vault = pick(priority_vaults)
+				priority_vaults.Remove(new_vault)
+			else
+				new_vault = pick(list_of_vaults) //Pick a random path from list_of_vaults (like /datum/vault/spacegym)
 
 			if(new_vault.only_spawn_once)
 				list_of_vaults.Remove(new_vault)

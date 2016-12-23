@@ -9,6 +9,7 @@ var/list/existing_vaults = list()
 	var/list/map_blacklist = list() //Don't spawn on these maps
 
 	var/only_spawn_once = 1 //If 0, this vault can spawn multiple times on a single map
+	var/guaranteed_spawn = FALSE
 
 	var/base_turf_type = /turf/space //The "default" turf type that surrounds this vault. If it differs from the z-level's base turf type (for example if this vault is loaded on a snow map), all turfs of this type will be replaced with turfs of the z-level's base turf type
 
@@ -108,9 +109,13 @@ var/list/existing_vaults = list()
 
 /datum/map_element/vault/droneship
 	file_path = "maps/randomvaults/droneship.dmm"
-	
+
 /datum/map_element/vault/meteorlogical_station
 	file_path = "maps/randomvaults/meteorlogical_station.dmm"
 
 /datum/map_element/vault/taxi_engi
 	file_path = "maps/randomvaults/taxi_engineering.dmm"
+
+/datum/map_element/vault/market
+	guaranteed_spawn = TRUE
+	file_path = "maps/randomvaults/shop/shop.dmm"
