@@ -22,9 +22,9 @@
 		user.delayNextAttack(10)
 	if(istype(I) && ismob(user))
 		if(originator)
-			I.attack(src, user, null, originator)
+			return I.attack(src, user, null, originator)
 		else
-			I.attack(src, user)
+			return I.attack(src, user)
 
 
 // Proximity_flag is 1 if this afterattack was called on something adjacent, in your square, or on your person.

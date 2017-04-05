@@ -35,7 +35,10 @@
 		if(ismob(M) && M.reagents && reagents.total_volume)
 			user.visible_message("<span class='warning'>\The [M] has been smothered with \the [src] by \the [user]!</span>", "<span class='warning'>You smother \the [M] with \the [src]!</span>", "You hear some struggling and muffled cries of surprise")
 			src.reagents.reaction(M, TOUCH)
-			spawn(5) src.reagents.clear_reagents()
+
+			spawn(5)
+				src.reagents.clear_reagents()
+
 			return 1
 	else
 		..()
@@ -57,4 +60,3 @@
 						qdel(O)
 			reagents.remove_any(1)
 			user.visible_message("<span class='notice'>[user] finishes wiping down \the [target].</span>", "<span class='notice'>You have finished wiping down \the [target]!</span>")
-	return
