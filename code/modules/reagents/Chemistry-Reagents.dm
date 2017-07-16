@@ -433,7 +433,7 @@
 				if(M.acidable())
 					M.take_organ_damage(min(15, volume * 2))
 
-		else if(H.dna.mutantrace == "slime")
+		else if(isslimeperson(H))
 
 			H.adjustToxLoss(rand(1,3))
 
@@ -554,7 +554,7 @@
 		return 1
 
 	M.adjustToxLoss(-2 * REM)
-	M.apply_effect(4 * REM, IRRADIATE, 0)
+	M.apply_radiation(4 * REM,RAD_INTERNAL)
 
 /datum/reagent/toxin
 	name = "Toxin"
@@ -660,10 +660,10 @@
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/human = M
-		if(human.dna.mutantrace == null)
+		if(!isslimeperson(human))
 			to_chat(M, "<span class='warning'>Your flesh rapidly mutates!</span>")
-			human.dna.mutantrace = "slime"
-			human.update_mutantrace()
+			human.set_species("Evolved Slime")
+			human.regenerate_icons()
 
 /datum/reagent/aslimetoxin
 	name = "Advanced Mutation Toxin"
@@ -1362,7 +1362,7 @@
 	if(..())
 		return 1
 
-	M.apply_effect(2 * REM, IRRADIATE,0)
+	M.apply_radiation(2 * REM, RAD_INTERNAL)
 	//Radium may increase your chances to cure a disease
 	if(iscarbon(M)) //Make sure to only use it on carbon mobs
 		var/mob/living/carbon/C = M
@@ -1371,7 +1371,7 @@
 				var/datum/disease2/disease/V = C.virus2[ID]
 				if(prob(5))
 					if(prob(50))
-						C.radiation += 50 //Curing it that way may kill you instead
+						C.apply_radiation(50, RAD_INTERNAL) //Curing it that way may kill you instead
 						C.adjustToxLoss(100)
 					C.antibodies |= V.antigen
 
@@ -1508,7 +1508,7 @@
 		M = holder.my_atom
 	if(..())
 		return 1
-	M.apply_effect(10,IRRADIATE,0)
+	M.apply_radiation(10,RAD_INTERNAL)
 
 /datum/reagent/tramadol
 	name = "Tramadol"
@@ -1630,7 +1630,7 @@
 	if(..())
 		return 1
 
-	M.apply_effect(1, IRRADIATE, 0)
+	M.apply_radiation(1, RAD_INTERNAL)
 
 /datum/reagent/uranium/reaction_turf(var/turf/simulated/T, var/volume)
 
@@ -1653,7 +1653,7 @@
 	if(..())
 		return 1
 
-	M.apply_effect(5, IRRADIATE, 0)
+	M.apply_radiation(5, RAD_INTERNAL)
 	if(prob(20))
 		M.advanced_mutate()
 
@@ -1756,7 +1756,7 @@
 			M.adjustToxLoss(rand(5, 10))
 
 		for(var/mob/living/carbon/human/H in T)
-			if(H.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				H.adjustToxLoss(rand(0.5, 1))
 
 /datum/reagent/space_cleaner/reaction_mob(var/mob/living/M, var/method = TOUCH, var/volume)
@@ -2262,6 +2262,14 @@
 	if(prob(15))
 		M.take_organ_damage(1, 0)
 
+/datum/reagent/lithotorcrazine
+	name = "Lithotorcrazine"
+	id = LITHOTORCRAZINE
+	description = "A derivative of Arithrazine. Rather than reducing radiation in a host, actively impedes the host from being irradiated instead."
+	reagent_state = SOLID
+	color = "#C0C0C0"
+	custom_metabolism = 0.2
+
 /datum/reagent/alkysine
 	name = "Alkysine"
 	id = ALKYSINE
@@ -2368,6 +2376,140 @@
 
 	if(prob(5))
 		M.emote(pick("twitch","blink_r","shiver"))
+
+/datum/reagent/hypozine //syndie hyperzine
+	name = "Hypozine"
+	id = HYPOZINE
+	description = "Hypozine is an extremely effective, short lasting, muscle stimulant."
+	reagent_state = LIQUID
+	color = "#C8A5DC" //rgb: 200, 165, 220
+	var/has_been_hypozined = 0
+	var/has_had_heart_explode = 0 //We've applied permanent damage.
+	custom_metabolism = 0.04
+	var/oldspeed = 0
+	data = 0
+
+/datum/reagent/hypozine/reagent_deleted()
+
+	if(..())
+		return 1
+
+	if(!holder)
+		return
+	var/mob/M =  holder.my_atom
+
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if(!has_been_hypozined)
+			return
+		var/timedmg = ((data - 60) / 2)
+		if (timedmg > 0)
+			dehypozine(H, timedmg, 1, 0)
+
+/datum/reagent/hypozine/on_mob_life(var/mob/living/M)
+
+	if(..())
+		return 1
+
+	M.reagents.add_reagent ("hyperzine", 0.03) //To pretend it's all okay.
+	if(ishuman(M))
+		if(data<121 && !has_been_hypozined)
+			has_been_hypozined = 1
+			has_had_heart_explode = 0 //Fuck them UP after they're done going fast.
+
+	switch(data)
+		if(60 to 99)	//Speed up after a minute
+			if(data==60)
+				to_chat(M, "<span class='notice'>You feel faster.")
+				M.movement_speed_modifier += 0.5
+				oldspeed += 0.5
+			if(prob(5))
+				to_chat(M, "<span class='notice'>[pick("Your leg muscles pulsate", "You feel invigorated", "You feel like running")].")
+		if(100 to 114)	//painfully fast
+			if(data==100)
+				to_chat(M, "<span class='notice'>Your muscles start to feel pretty hot.")
+				M.movement_speed_modifier += 0.5
+				oldspeed += 0.5
+			if(ishuman(M))
+				var/mob/living/carbon/human/H = M
+				if(prob(10))
+					if (M.get_heart())
+						to_chat(M, "<span class='notice'>[pick("Your legs are heating up", "You feel your heart racing", "You feel like running as far as you can")]!")
+					else
+						to_chat(M, "<span class='notice'>[pick("Your legs are heating up", "Your body is aching to move", "You feel like running as far as you can")]!")
+				H.adjustFireLoss(0.1)
+		if(115 to 120)	//traverse at a velocity exceeding the norm
+			if(data==115)
+				to_chat(M, "<span class='alert'>Your muscles are burning up!")
+				M.movement_speed_modifier += 2
+				oldspeed += 2
+
+			if(ishuman(M))
+				var/mob/living/carbon/human/H = M
+				if(prob(25))
+					if (M.get_heart())
+						to_chat(M, "<span class='alert'>[pick("Your legs are burning", "All you feel is your heart racing", "Run! Run through the pain")]!")
+					else
+						to_chat(M, "<span class='alert'>[pick("Your legs are burning", "You feel like you're on fire", "Run! Run through the heat")]!")
+				H.adjustToxLoss(1)
+				H.adjustFireLoss(2)
+		if(121 to INFINITY)	//went2fast
+			dehypozine(M)
+	data++
+
+/datum/reagent/hypozine/proc/dehypozine(var/mob/living/M, heartdamage = 30, override_remove = 0, explodeheart = 1)
+	M.movement_speed_modifier -= oldspeed
+	if(has_been_hypozined && !has_had_heart_explode)
+		has_had_heart_explode = 1
+		if(!override_remove)
+			holder.remove_reagent(src.id) //Clean them out
+
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+
+			if(H.get_heart())//Got a heart?
+				var/datum/organ/internal/heart/damagedheart = H.get_heart()
+				if (heartdamage >= 30)
+					if(H.species.name != "Diona" && damagedheart) //fuck dionae
+						to_chat(H, "<span class='danger'>You feel a terrible pain in your chest!</span>")
+						damagedheart.damage += heartdamage //Bye heart.
+						if(explodeheart)
+							qdel(H.remove_internal_organ(H,damagedheart,H.get_organ(LIMB_CHEST)))
+						H.adjustOxyLoss(heartdamage*2)
+						H.adjustBruteLoss(heartdamage)
+					else
+						to_chat(H, "<span class='danger'>The heat engulfs you!</span>")
+						for(var/datum/organ/external/E in H.organs)
+							E.droplimb(1, 1) //Bye limbs!
+							H.adjustFireLoss(heartdamage)
+							H.adjustBruteLoss(heartdamage)
+							H.adjustToxLoss(heartdamage)
+							if(explodeheart)
+								qdel(H.remove_internal_organ(H,damagedheart,H.get_organ(LIMB_CHEST))) //and heart!
+				else if (heartdamage < 30)
+					if(H.species.name != "Diona")
+						to_chat(H, "<span class='danger'>You feel a sharp pain in your chest!</span>")
+					else
+						to_chat(H, "<span class='danger'>The heat engulfs you!</span>")
+						H.adjustFireLoss(heartdamage)
+					damagedheart.damage += heartdamage
+					H.adjustToxLoss(heartdamage)
+					H.adjustBruteLoss(heartdamage)
+			else//No heart?
+				to_chat(H, "<span class='danger'>The heat engulfs you!</span>")
+				if (heartdamage >= 30)
+					for(var/datum/organ/external/E in H.organs)
+						E.droplimb(1, 1) //Bye limbs!
+						H.adjustBruteLoss(heartdamage)
+						H.adjustFireLoss(heartdamage)
+				else if (heartdamage < 30)
+					H.adjustBruteLoss(heartdamage)
+					H.adjustFireLoss(heartdamage)
+					H.adjustToxLoss(heartdamage)
+		else
+			M.gib()
+		data = 0
+		oldspeed = 0
 
 /datum/reagent/cryoxadone
 	name = "Cryoxadone"
@@ -2965,6 +3107,9 @@
 	if(..())
 		return 1
 
+	var/mob/living/carbon/human/H
+	if(ishuman(M))
+		H = M
 	switch(data)
 		if(1 to 15)
 			M.bodytemperature += 0.6 * TEMPERATURE_DAMAGE_COEFFICIENT
@@ -2972,19 +3117,19 @@
 				holder.remove_reagent("frostoil", 5)
 			if(isslime(M))
 				M.bodytemperature += rand(5,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature += rand(5,20)
 		if(15 to 25)
 			M.bodytemperature += 0.9 * TEMPERATURE_DAMAGE_COEFFICIENT
 			if(isslime(M))
 				M.bodytemperature += rand(10,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature += rand(10,20)
 		if(25 to INFINITY)
 			M.bodytemperature += 1.2 * TEMPERATURE_DAMAGE_COEFFICIENT
 			if(isslime(M))
 				M.bodytemperature += rand(15,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature += rand(15,20)
 	data++
 
@@ -3057,6 +3202,9 @@
 	if(..())
 		return 1
 
+	var/mob/living/carbon/human/H
+	if(ishuman(M))
+		H = M
 	switch(data)
 		if(1 to 15)
 			M.bodytemperature = max(M.bodytemperature-0.3 * TEMPERATURE_DAMAGE_COEFFICIENT,T20C)
@@ -3064,13 +3212,13 @@
 				holder.remove_reagent("capsaicin", 5)
 			if(isslime(M))
 				M.bodytemperature -= rand(5,20)
-			if(M.dna && M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature -= rand(5,20)
 		if(15 to 25)
 			M.bodytemperature = max(M.bodytemperature-0.6 * TEMPERATURE_DAMAGE_COEFFICIENT,T20C)
 			if(isslime(M))
 				M.bodytemperature -= rand(10,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature -= rand(10,20)
 		if(25 to INFINITY)
 			M.bodytemperature = max(M.bodytemperature-0.9 * TEMPERATURE_DAMAGE_COEFFICIENT,T20C)
@@ -3078,7 +3226,7 @@
 				M.emote("shiver")
 			if(isslime(M))
 				M.bodytemperature -= rand(15,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature -= rand(15,20)
 	data++
 
@@ -3090,7 +3238,7 @@
 	for(var/mob/living/carbon/slime/M in T)
 		M.adjustToxLoss(rand(15, 30))
 	for(var/mob/living/carbon/human/H in T)
-		if(H.dna.mutantrace == "slime")
+		if(isslimeperson(H))
 			H.adjustToxLoss(rand(5, 15))
 
 /datum/reagent/sodiumchloride
@@ -4150,6 +4298,9 @@
 	if(..())
 		return 1
 
+	var/mob/living/carbon/human/H
+	if(ishuman(M))
+		H = M
 	switch(data)
 		if(1 to 15)
 			M.bodytemperature -= 0.1 * TEMPERATURE_DAMAGE_COEFFICIENT
@@ -4157,13 +4308,13 @@
 				holder.remove_reagent("capsaicin", 5)
 			if(isslime(M))
 				M.bodytemperature -= rand(5,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature -= rand(5,20)
 		if(15 to 25)
 			M.bodytemperature -= 0.2 * TEMPERATURE_DAMAGE_COEFFICIENT
 			if(isslime(M))
 				M.bodytemperature -= rand(10,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature -= rand(10,20)
 		if(25 to INFINITY)
 			M.bodytemperature -= 0.3 * TEMPERATURE_DAMAGE_COEFFICIENT
@@ -4171,7 +4322,7 @@
 				M.emote("shiver")
 			if(isslime(M))
 				M.bodytemperature -= rand(15,20)
-			if(M.dna.mutantrace == "slime")
+			if(isslimeperson(H))
 				M.bodytemperature -= rand(15,20)
 	data++
 
@@ -5386,7 +5537,7 @@ var/global/list/tonio_doesnt_remove=list("tonio", "blood")
 	if(..())
 		return 1
 
-	M.apply_effect(2, IRRADIATE, 0)
+	M.apply_radiation(2, RAD_INTERNAL)
 
 /datum/reagent/drink/sportdrink
 	name = "Sport Drink"
@@ -5508,7 +5659,7 @@ var/global/list/tonio_doesnt_remove=list("tonio", "blood")
 		volume = holder.maximum_volume
 		holder.update_total()
 
-datum/reagent/fishbleach
+/datum/reagent/fishbleach
 	name = "Fish Bleach"
 	id = FISHBLEACH
 	description = "Just looking at this liquid makes you feel tranquil and peaceful. You aren't sure if you want to drink any however."
@@ -5520,3 +5671,271 @@ datum/reagent/fishbleach
 		return 1
 	H.color = "#12A7C9"
 	return
+
+/datum/reagent/roach_shell
+	name = "Cockroach chitin"
+	id = ROACHSHELL
+	description = "Looks like somebody's been shelling peanuts."
+	reagent_state = SOLID
+	color = "#8B4513"
+
+/datum/reagent/ethanol/deadrum/greyvodka
+	name = "Greyshirt vodka"
+	id = GREYVODKA
+	description = "Made presumably from whatever scrapings you can get out of maintenance. Don't think, just drink."
+	reagent_state = LIQUID
+	color = "#DEF7F5"
+	alpha = 64
+
+/datum/reagent/ethanol/deadrum/greyvodka/on_mob_life(var/mob/living/carbon/human/H)
+	if(..())
+		return 1
+	H.radiation = max(H.radiation - 5 * REM, 0)
+	H.rad_tick = max(H.rad_tick - 3 * REM, 0)
+
+/datum/reagent/mediumcores
+	name = "medium-salted cores"
+	id = MEDCORES
+	description = "A derivative of the chemical known as 'Hardcores', easier to mass produce, but at a cost of quality."
+	reagent_state = SOLID
+	color = "#FFA500"
+	custom_metabolism = 0.1
+
+//Plant-specific reagents
+
+/datum/reagent/kelotane/tannic_acid
+	name = "Tannic acid"
+	id = TANNIC_ACID
+	description = "Tannic acid is a natural burn remedy."
+	reagent_state = LIQUID
+	color = "#150A03" //rgb: 21, 10, 3
+
+/datum/reagent/dermaline/kathalai
+	name = "Kathalai"
+	id = KATHALAI
+	description = "Kathalai is an exceptional natural burn remedy, it performs twice as well as tannic acid."
+	color = "#32BD08" //rgb: 50, 189, 8
+
+/datum/reagent/bicaridine/opium
+	name = "Opium"
+	id = OPIUM
+	description = "Opium is an exceptional natural analgesic."
+	color = "#AE9260" //rgb: 174, 146, 96
+
+/datum/reagent/space_drugs/mescaline
+	name = "Mescaline"
+	id = MESCALINE
+	description = "Known to cause mild hallucinations, mescaline is often used recreationally."
+	color = "#B8CD93" //rgb: 184, 205, 147
+
+/datum/reagent/synaptizine/cytisine
+	name = "Cytisine"
+	id = CYTISINE
+	description = "Cytisine is an alkaloid which mimics the effects of nicotine."
+	color = "#A49B50" //rgb: 164, 155, 80
+
+/datum/reagent/hyperzine/cocaine
+	name = "Cocaine"
+	id = COCAINE
+	description = "Cocaine is a powerful nervous system stimulant."
+	color = "#FFFFFF" //rgb: 255, 255, 255
+
+/datum/reagent/imidazoline/zeaxanthin
+	name = "Zeaxanthin"
+	id = ZEAXANTHIN
+	description = "Zeaxanthin is a natural pigment which purportedly supports eye health."
+	color = "#CC4303" //rgb: 204, 67, 3
+
+/datum/reagent/stoxin/valerenic_acid
+	name = "Valerenic acid"
+	id = VALERENIC_ACID
+	description = "An herbal sedative used to treat insomnia."
+	color = "#EAB160" //rgb: 234, 177, 96
+
+/datum/reagent/anti_toxin/allicin
+	name = "Allicin"
+	id = ALLICIN
+	description = "Allicin is a natural broad-spectrum antitoxin."
+	color = "#F1DEB4" //rgb: 241, 222, 180
+
+/datum/reagent/sacid/formic_acid
+	name = "Formic acid"
+	id = FORMIC_ACID
+	description = "A weak natural acid which causes a burning sensation upon contact."
+	color = "#9B3D00" //rgb: 155, 61, 0
+
+/datum/reagent/pacid/phenol
+	name = "Phenol"
+	id = PHENOL
+	description = "Phenol is a corrosive acid which can cause chemical burns."
+	color = "#C71839" //rgb: 199, 24, 57
+
+/datum/reagent/ethanol/deadrum/neurotoxin/curare
+	name = "Curare"
+	id = CURARE
+	description = "An alkaloid plant extract which causes weakness of the skeletal muscles."
+	color = "#94DC76" //rgb: 148, 220, 118
+
+/datum/reagent/toxin/solanine
+	name = "Solanine"
+	id = SOLANINE
+	description = "A glycoalkaloid poison."
+	color = "#6C8347" //rgb: 108, 131, 71
+
+/datum/reagent/cryptobiolin/physostigmine
+	name = "Physostigmine"
+	id = PHYSOSTIGMINE
+	description = "Physostigmine causes confusion and dizzyness."
+	color = "#0098D7" //rgb: 0, 152, 215
+
+/datum/reagent/impedrezene/hyoscyamine
+	name = "Hyoscyamine"
+	id = HYOSCYAMINE
+	description = "Hyoscyamine is a tropane alkaloid which can disrupt the central nervous system."
+	color = "#BBD0C9" //rgb: 187, 208, 201
+
+/datum/reagent/lexorin/coriamyrtin
+	name = "Coriamyrtin"
+	id = CORIAMYRTIN
+	description = "Coriamyrtin is a toxin which causes respiratory problems."
+	color = "#FB6892" //rgb: 251, 104, 146
+
+/datum/reagent/dexalin/thymol
+	name = "Thymol"
+	id = THYMOL
+	description = "Thymol is used in the treatment of respiratory problems."
+	color = "#790D27" //rgb: 121, 13, 39
+
+//End of plant-specific reagents
+
+//Petritricin = cockatrice juice
+//Lore explanation for it affecting worn items (like hardsuits), but not items dropped on the ground that it was splashed over:
+//Pure petritricin can stonify any matter, organic or unorganic. However, if it's outside of a living organism, it rapidly deterogates
+//until it is only strong enough to affect organic matter.
+//When introduced to organic matter, petritricin converts living cells to produce more of itself, and the freshly produced substance
+//can affect items worn close enough to the body
+/datum/reagent/petritricin
+	name = "Petritricin"
+	id = PETRITRICIN
+	description = "Petritricin is a venom produced by cockatrices. The extraction process causes a major potency loss, but a right dose of this can still petrify somebody."
+	color = "#002000" //rgb: 0, 32, 0
+	dupeable = FALSE
+
+	var/minimal_dosage = 1 //At least 1 unit is needed for petriication
+
+/datum/reagent/petritricin/on_mob_life(var/mob/living/M)
+	if(..())
+		return 1
+
+	if(volume >= minimal_dosage && prob(30))
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+			if(locate(/datum/disease/petrification) in H.viruses)
+				return
+
+			var/datum/disease/D = new /datum/disease/petrification
+			D.holder = H
+			D.affected_mob = H
+			H.viruses += D
+		else if(!issilicon(M))
+			if(M.turn_into_statue(1)) //Statue forever
+				to_chat(M, "<span class='userdanger'>You have been turned to stone by ingesting petritricin.</span>")
+
+//A chemical for curing petrification. It only works after you've been fully petrified
+//Items on corpses will survive the process, but the corpses itself will be damaged and uncloneable after unstoning
+/datum/reagent/apetrine
+	name = "Apetrine"
+	id = APETRINE
+	description = "Apetrine is a chemical used to partially reverse the post-mortem effects of petritricin."
+	color = "#240080" //rgb: 36, 0, 128
+	dupeable = FALSE
+
+/datum/reagent/apetrine/reaction_obj(var/obj/O, var/volume)
+	if(..())
+		return 1
+
+	if(istype(O, /obj/structure/closet/statue))
+		var/obj/structure/closet/statue/statue = O
+
+		statue.dissolve()
+
+/datum/reagent/hemoscyanine
+	name = "Hemoscyanine"
+	id = HEMOSCYANINE
+	description = "Hemoscyanine is a toxin which can destroy blood cells."
+	reagent_state = LIQUID
+	color = "#600000" //rgb: 96, 0, 0
+
+/datum/reagent/hemoscyanine/on_mob_life(var/mob/living/M)
+	if(..())
+		return 1
+
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if(!(H.species.anatomy_flags & NO_BLOOD))
+			H.vessel.remove_reagent(BLOOD, 2)
+
+/datum/reagent/anthracene
+	name = "Anthracene"
+	id = ANTHRACENE
+	description = "Anthracene is a fluorophore which emits a weak green glow."
+	reagent_state = LIQUID
+	color = "#00ff00" //rgb: 0, 255, 0
+	data = 0
+	var/light_intensity = 4
+	var/initial_color = null
+
+/datum/reagent/anthracene/on_mob_life(var/mob/living/M)
+	if(..())
+		return 1
+
+	if(!data)
+		initial_color = M.light_color
+		M.light_color = LIGHT_COLOR_GREEN
+		M.set_light(light_intensity)
+		data++
+
+/datum/reagent/anthracene/reagent_deleted()
+	if(..())
+		return 1
+
+	if(!holder)
+		return
+	var/atom/A =  holder.my_atom
+	A.light_color = initial_color
+	A.set_light(0)
+
+/datum/reagent/anthracene/reaction_mob(var/mob/living/M, var/method = TOUCH, var/volume)
+	if(..())
+		return 1
+
+	if(method == TOUCH)
+		var/init_color = M.light_color
+		M.light_color = LIGHT_COLOR_GREEN
+		M.set_light(light_intensity)
+		spawn(volume * 10)
+			M.light_color = init_color
+			M.set_light(0)
+
+/datum/reagent/anthracene/reaction_turf(var/turf/simulated/T, var/volume)
+	if(..())
+		return 1
+
+	var/init_color = T.light_color
+	T.light_color = LIGHT_COLOR_GREEN
+	T.set_light(light_intensity)
+	spawn(volume * 10)
+		T.light_color = init_color
+		T.set_light(0)
+
+/datum/reagent/anthracene/reaction_obj(var/obj/O, var/volume)
+	if(..())
+		return 1
+
+	var/init_color = O.light_color
+	O.light_color = LIGHT_COLOR_GREEN
+	O.set_light(light_intensity)
+	spawn(volume * 10)
+		O.light_color = init_color
+		O.set_light(0)
+

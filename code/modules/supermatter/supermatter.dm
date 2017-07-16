@@ -122,22 +122,22 @@
 /obj/machinery/power/supermatter/shard/singularity_act(current_size, obj/machinery/singularity/S)
 	var/prints = ""
 	if(src.fingerprintshidden)
-		prints = ", all touchers : [list2params(src.fingerprintshidden)]"
+		prints = ", all touchers: [list2params(src.fingerprintshidden)]"
 	if(current_size == STAGE_FIVE)
 		S.expand(STAGE_SUPER, 1)
-		log_admin("New super singularity made by eating a SM crystal [prints]. Last touched by [src.fingerprintslast].")
-		message_admins("New super singularity made by eating a SM crystal [prints]. Last touched by [src.fingerprintslast].")
+		log_admin("New super singularity made by eating a SM crystal[prints]. Last touched by [src.fingerprintslast].")
+		message_admins("New super singularity made by eating a SM crystal[prints]. Last touched by [src.fingerprintslast].")
 	qdel(src)
 	return 15000
 
 /obj/machinery/power/supermatter/singularity_act(current_size, obj/machinery/singularity/S)
 	var/prints = ""
 	if(src.fingerprintshidden)
-		prints = ", all touchers : " + src.fingerprintshidden
+		prints = ", all touchers: [list2params(src.fingerprintshidden)]"
 	SetUniversalState(/datum/universal_state/supermatter_cascade)
 	S.expand(STAGE_SUPER, 1)
-	log_admin("New super singularity made by eating a SM crystal [prints]. Last touched by [src.fingerprintslast].")
-	message_admins("New super singularity made by eating a SM crystal [prints]. Last touched by [src.fingerprintslast].")
+	log_admin("New super singularity made by eating a SM crystal[prints]. Last touched by [src.fingerprintslast].")
+	message_admins("New super singularity made by eating a SM crystal[prints]. Last touched by [src.fingerprintslast].")
 	qdel(src)
 	return 20000
 
@@ -212,7 +212,7 @@
 					//Hilariously enough, running into a closet should make you get hit the hardest.
 					mob:hallucination += max(50, min(300, DETONATION_HALLUCINATION * sqrt(1 / (get_dist(mob, src) + 1)) ) )
 				var/rads = DETONATION_RADS * sqrt( 1 / (get_dist(mob, src) + 1) )
-				mob.apply_effect(rads, IRRADIATE)
+				mob.apply_radiation(rads, RAD_EXTERNAL)
 
 			explode()
 
@@ -298,7 +298,7 @@
 
 	for(var/mob/living/l in range(src, round((power / 100) ** 0.25)))
 		var/rads = (power / 10) * sqrt(1/(max(get_dist(l, src), 1)))
-		l.apply_effect(rads, IRRADIATE)
+		l.apply_radiation(rads, RAD_EXTERNAL)
 
 	power -= (power/500)**3
 
@@ -393,7 +393,7 @@
 	user.drop_from_inventory(W)
 	Consume(W)
 
-	user.apply_effect(150, IRRADIATE)
+	user.apply_radiation(150, RAD_EXTERNAL)
 
 
 /obj/machinery/power/supermatter/Bumped(atom/AM as mob|obj)
@@ -438,7 +438,7 @@
 		else
 			l.show_message("<span class=\"warning\">You hear an uneartly ringing and notice your skin is covered in fresh radiation burns.</span>", 2)
 		var/rads = 500 * sqrt( 1 / (get_dist(l, src) + 1) )
-		l.apply_effect(rads, IRRADIATE, 0) // Permit blocking
+		l.apply_radiation(rads, RAD_EXTERNAL) // Permit blocking
 
 
 /obj/machinery/power/supermatter/blob_act()

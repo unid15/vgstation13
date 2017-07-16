@@ -74,9 +74,7 @@
 				if(iswrench(P))
 					playsound(get_turf(src), 'sound/items/Ratchet.ogg', 75, 1)
 					to_chat(user, "<span class='notice'>You dismantle the frame.</span>")
-					//new /obj/item/stack/sheet/metal(src.loc, 5)
-					var/obj/item/stack/sheet/metal/M = getFromPool(/obj/item/stack/sheet/metal, src.loc)
-					M.amount = 5
+					drop_stack(/obj/item/stack/sheet/metal, get_turf(src), 5, user)
 					qdel(src)
 		if(2)
 			if(!..())
@@ -1260,3 +1258,14 @@ obj/item/weapon/circuitboard/rdserver
 	name = "Circuit Board (Isotope Ratio Spectrometer)"
 	desc = "A circuit board used to run a machine used in xenoarcheology."
 	build_path = "/obj/machinery/anomaly/isotope_ratio"
+
+/obj/item/weapon/circuitboard/confectionator
+
+	name = "circuit board (confectionator)"
+	desc = "A circuit board used to run a kitchen appliance."
+	board_type = MACHINE
+	build_path = "/obj/machinery/cooking/deepfryer/confectionator"
+	req_components = list(
+						"/obj/item/weapon/stock_parts/matter_bin" = 1,
+						"/obj/item/weapon/stock_parts/scanning_module" = 1,
+						"/obj/item/weapon/stock_parts/micro_laser" = 1)

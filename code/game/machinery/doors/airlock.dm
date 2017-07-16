@@ -53,6 +53,7 @@
 	soundeffect = 'sound/machines/airlock.ogg'
 	var/pitch = 30
 	penetration_dampening = 10
+	var/image/shuttle_warning_lights
 
 	explosion_block = 1
 
@@ -263,7 +264,7 @@
 
 /obj/machinery/door/airlock/uranium/proc/radiate()
 	for(var/mob/living/L in range (3,src))
-		L.apply_effect(15,IRRADIATE,0)
+		L.apply_radiation(15,RAD_EXTERNAL)
 	return
 
 /obj/machinery/door/airlock/plasma

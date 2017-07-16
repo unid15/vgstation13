@@ -66,11 +66,18 @@
 /mob/living/carbon/human/golem/New(var/new_loc, delay_ready_dna = 0)
 	h_style = "Bald"
 	..(new_loc, "Golem")
-	gender = NEUTER
 
 /mob/living/carbon/human/grue/New(var/new_loc, delay_ready_dna = 0)
 	h_style = "Bald"
 	..(new_loc, "Grue")
+
+/mob/living/carbon/human/slime/New(var/new_loc, delay_ready_dna = 0)
+	h_style = "Bald"
+	..(new_loc, "Slime")
+
+/mob/living/carbon/human/NPC/New(var/new_loc, delay_ready_dna = 0)
+	..(new_loc)
+	initialize_basic_NPC_components()
 
 /mob/living/carbon/human/frankenstein/New(var/new_loc, delay_ready_dna = 0) //Just fuck my shit up: the mob
 	f_style = pick(facial_hair_styles_list)
@@ -112,6 +119,9 @@
 
 	if(new_species_name)
 		s_tone = random_skin_tone(new_species_name)
+	multicolor_skin_r = rand(0,255)	//Only used when the human has a species datum with the MULTICOLOR anatomical flag
+	multicolor_skin_g = rand(0,255)
+	multicolor_skin_b = rand(0,255)
 
 	if(!src.species)
 		if(new_species_name)
@@ -187,6 +197,9 @@
 				to_chat(src, "<b>Keep an eye out on the hunger indicator on the right of your screen; it will start flashing red and black when you're close to starvation.</b>")
 
 	update_colour(0,1)
+
+	spawn()
+		update_mutantrace()
 
 /mob/living/carbon/human/player_panel_controls()
 	var/html=""
@@ -293,11 +306,16 @@
 /mob/living/carbon/human/proc/get_assignment(var/if_no_id = "No id", var/if_no_job = "No job")
 	var/obj/item/device/pda/pda = wear_id
 	var/obj/item/weapon/card/id/id = wear_id
+	var/obj/item/weapon/storage/wallet/wallet = wear_id
 	if (istype(pda))
 		if (pda.id && istype(pda.id, /obj/item/weapon/card/id))
 			. = pda.id.assignment
 		else
 			. = pda.ownjob
+	else if (istype(wallet))
+		var/obj/item/weapon/card/id/wallet_id = wallet.GetID()
+		if(istype(wallet_id))
+			. = wallet_id.assignment
 	else if (istype(id))
 		. = id.assignment
 	else
@@ -512,39 +530,15 @@
 						if (R.fields["id"] == E.fields["id"])
 							if(hasHUD(usr,"security"))
 								to_chat(usr, "<b>Name:</b> [R.fields["name"]]	<b>Criminal Status:</b> [R.fields["criminal"]]")
-								to_chat(usr, "<b>Minor Crimes:</b> [R.fields["mi_crim"]]")
-								to_chat(usr, "<b>Details:</b> [R.fields["mi_crim_d"]]")
-								to_chat(usr, "<b>Major Crimes:</b> [R.fields["ma_crim"]]")
-								to_chat(usr, "<b>Details:</b> [R.fields["ma_crim_d"]]")
 								to_chat(usr, "<b>Notes:</b> [R.fields["notes"]]")
-								to_chat(usr, "<a href='?src=\ref[src];secrecordComment=`'>\[View Comment Log\]</a>")
-								read = 1
-			if(!read)
-				to_chat(usr, "<span class='warning'>Unable to locate a data core entry for this person.</span>")
-	else if (href_list["secrecordComment"])
-		if(hasHUD(usr,"security"))
-			var/perpname = "wot"
-			var/read = 0
-			if(wear_id)
-				if(istype(wear_id,/obj/item/weapon/card/id))
-					perpname = wear_id:registered_name
-				else if(istype(wear_id,/obj/item/device/pda))
-					var/obj/item/device/pda/tempPda = wear_id
-					perpname = tempPda.owner
-			else
-				perpname = src.name
-			for (var/datum/data/record/E in data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in data_core.security)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"security"))
-								read = 1
 								var/counter = 1
+								to_chat(usr, "<b>Comments:</b>")
 								while(R.fields[text("com_[]", counter)])
 									to_chat(usr, text("[]", R.fields[text("com_[]", counter)]))
 									counter++
 								if (counter == 1)
-									to_chat(usr, "No comment found")
+									to_chat(usr, "No comments found.")
+								read = 1
 								to_chat(usr, "<a href='?src=\ref[src];secrecordadd=`'>\[Add comment\]</a>")
 			if(!read)
 				to_chat(usr, "<span class='warning'>Unable to locate a data core entry for this person.</span>")
@@ -1267,6 +1261,9 @@
 	src.species = new S.type
 	src.species.myhuman = src
 
+	if(S.gender)
+		gender = S.gender
+
 	for(var/L in species.known_languages)
 		add_language(L)
 	if(species.default_language)
@@ -1486,7 +1483,7 @@
 				step_towards(I, src)
 				to_chat(src, "<span class = 'warning'>\The [S] pulls \the [I] from your grip!</span>")
 	if(radiations)
-		apply_effect(current_size * radiations, IRRADIATE)
+		apply_radiation(current_size * radiations, RAD_EXTERNAL)
 	if(shoes)
 		if(shoes.clothing_flags & NOSLIP && current_size <= STAGE_FOUR)
 			return 0
@@ -1676,6 +1673,54 @@
 /mob/living/carbon/human/is_fat()
 	return (M_FAT in mutations) && (species && species.anatomy_flags & CAN_BE_FAT)
 
+mob/living/carbon/human/isincrit()
+	if (health - halloss <= config.health_threshold_softcrit)
+		return 1
+
+/mob/living/carbon/human/get_broken_organs()
+	var/mob/living/carbon/human/H = src
+	var/list/return_organs = list()
+	for(var/datum/organ/external/damagedorgan in H.organs)
+		if(damagedorgan.status & ORGAN_BROKEN && !(damagedorgan.status & ORGAN_SPLINTED))
+			return_organs += damagedorgan
+	return return_organs
+
+/mob/living/carbon/human/get_bleeding_organs()
+	var/mob/living/carbon/human/H = src
+	var/list/return_organs = list()
+	for(var/datum/organ/external/damagedorgan in H.organs)
+		if(damagedorgan.status & ORGAN_BLEEDING)
+			return_organs += damagedorgan
+	return return_organs		
+		
+/mob/living/carbon/human/get_heart()
+	return internal_organs_by_name["heart"]
+
+//Moved from internal organ surgery
+//Removes organ from src, places organ object under user
+//example: H.remove_internal_organ(H,H.internal_organs_by_name["heart"],H.get_organ(LIMB_CHEST))
+mob/living/carbon/human/remove_internal_organ(var/mob/living/user, var/datum/organ/internal/targetorgan, var/datum/organ/external/affectedarea)
+	var/obj/item/organ/extractedorgan
+	if(targetorgan && istype(targetorgan))
+		extractedorgan = targetorgan.remove(user) //The organ that comes out at the end
+		if(extractedorgan && istype(extractedorgan))
+			// Stop the organ from continuing to reject.
+			extractedorgan.organ_data.rejecting = null
+
+			// Transfer over some blood data, if the organ doesn't have data.
+			var/datum/reagent/blood/organ_blood = extractedorgan.reagents.reagent_list[BLOOD]
+			var/organstring = targetorgan.organ_type
+			if(!organ_blood || !organ_blood.data["blood_DNA"])
+				vessel.trans_to(extractedorgan, 5, 1, 1)
+
+			internal_organs_by_name[organstring] = null
+			internal_organs_by_name -= organstring
+			internal_organs -= extractedorgan.organ_data
+			affectedarea.internal_organs -= extractedorgan.organ_data
+			extractedorgan.removed(src,user)
+
+			return extractedorgan
+
 /mob/living/carbon/human/feels_pain()
 	if(!species)
 		return FALSE
@@ -1712,6 +1757,7 @@
 
 	species.brute_mod *= rand(5,20)/10
 	species.burn_mod *= rand(5,20)/10
+	species.tox_mod *= rand(5,20)/10
 
 	if(prob(5))
 		species.flags = rand(0,65535)
@@ -1736,6 +1782,7 @@
 		"b_eyes",
 		"s_tone",
 		"lip_style",
+		"eye_style",
 		"wear_suit",
 		"w_uniform",
 		"shoes",
@@ -1771,6 +1818,8 @@
 		O.send_to_past(duration)
 	for(var/datum/organ/external/O in organs)
 		O.send_to_past(duration)
+	if(vessel)
+		vessel.send_to_past(duration)
 
 	updatehealth()
 
@@ -1778,3 +1827,15 @@
 	if(M_HULK in mutations)
 		return image(icon = 'icons/mob/attackanims.dmi', icon_state = "hulk")
 	else return image(icon = 'icons/mob/attackanims.dmi', icon_state = "default")
+
+/mob/living/carbon/human/proc/initialize_barebones_NPC_components()	//doesn't actually do anything, but contains tools needed for other types to do things
+	NPC_brain = new (src)
+	NPC_brain.AddComponent(/datum/component/controller/mob)
+	NPC_brain.AddComponent(/datum/component/ai/hand_control)
+
+/mob/living/carbon/human/proc/initialize_basic_NPC_components()	//will wander around
+	initialize_barebones_NPC_components()
+	NPC_brain.AddComponent(/datum/component/ai/human_brain)
+	NPC_brain.AddComponent(/datum/component/ai/target_finder/human)
+	NPC_brain.AddComponent(/datum/component/ai/target_holder/prioritizing)
+	NPC_brain.AddComponent(/datum/component/ai/melee/attack_human)

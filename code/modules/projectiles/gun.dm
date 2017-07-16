@@ -75,6 +75,9 @@
 	for(var/obj/O in contents)
 		O.emp_act(severity)
 
+/obj/item/weapon/gun/proc/can_discharge() //because process_chambered() is an atrocity
+	return 0		
+		
 /obj/item/weapon/gun/afterattack(atom/A as mob|obj|turf|area, mob/living/user as mob|obj, flag, params, struggle = 0)
 	if(flag)
 		return //we're placing gun on a table or in backpack
@@ -332,20 +335,36 @@
 			mouthshoot = 0
 			return
 
-	if (src.process_chambered())
+	if (can_discharge()) //Need to have something to fire but not load it up yet
 		//Point blank shooting if on harm intent or target we were targeting.
 		if(user.a_intent == I_HURT)
 			user.visible_message("<span class='danger'> \The [user] fires \the [src] point blank at [M]!</span>")
-			in_chamber.damage *= 1.3
+			if (process_chambered()) //Load whatever it is we fire
+				in_chamber.damage *= 1.3 //Some guns don't work with damage / chambers, like dart guns!
 			src.Fire(M,user,0,0,1)
 			return
 		else if(target && M in target)
+			process_chambered()
 			src.Fire(M,user,0,0,1) ///Otherwise, shoot!
 			return
 		else
 			return ..() //Allows a player to choose to melee instead of shoot, by being on help intent.
 	else
 		return ..() //Pistolwhippin'
+
+/obj/item/weapon/gun/state_controls_pai(obj/item/device/paicard/P)
+	if(P.pai)
+		to_chat(P.pai, "<span class='info'><b>You have been connected to \a [src].</b></span>")
+		to_chat(P.pai, "<span class='info'>Your controls are:</span>")
+		to_chat(P.pai, "<span class='info'>- PageDown / Z(hotkey mode): Connect or disconnect from \the [src]'s firing mechanism.</span>")
+		to_chat(P.pai, "<span class='info'>- Click on a target: Fire \the [src] at the target.</span>")
+
+/obj/item/weapon/gun/attack_integrated_pai(mob/living/silicon/pai/user)
+	if(!pai_safety)
+		to_chat(user, "<span class='notice'>You connect to \the [src]'s firing mechanism.</span>")
+	else
+		to_chat(user, "<span class='notice'>You disconnect from \the [src]'s firing mechanism.</span>")
+	pai_safety = !pai_safety
 
 /obj/item/weapon/gun/on_integrated_pai_click(mob/living/silicon/pai/user, var/atom/A)	//to allow any gun to be pAI-compatible, on a basic level, just by varediting
 	if(check_pai_can_fire(user))

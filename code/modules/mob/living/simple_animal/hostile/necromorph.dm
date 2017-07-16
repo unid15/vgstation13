@@ -20,7 +20,7 @@
 	attacktext = "slashes"
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 	faction = "marker"
-	speed = 4
+	speed = 5
 	size = SIZE_BIG
 	move_to_delay = 4
 	canRegenerate = 1
@@ -65,7 +65,7 @@
 	src.throw_at(get_turf(target),7,1)
 	return 1
 
-/mob/living/simple_animal/hostile/necromorph/leaper/Bump(atom/A)
+/mob/living/simple_animal/hostile/necromorph/leaper/to_bump(atom/A)
 	if(throwing && isliving(A) && CanAttack(A))
 		attach(A)
 	..()

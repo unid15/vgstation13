@@ -170,6 +170,7 @@
 
 	var/datum/dna/dna = null//Carbon
 	var/radiation = 0.0//Carbon
+	var/rad_tick = 0.0//Carbon
 
 	var/list/mutations = list() //Carbon -- Doohl
 	//see: setup.dm for list of mutations
@@ -275,6 +276,7 @@
 	var/event/on_uattack
 	var/event/on_logout
 	var/event/on_damaged
+	var/event/on_irradiate
 	// Allows overiding click modifiers and such.
 	var/event/on_clickon
 
@@ -284,7 +286,7 @@
 	var/see_in_dark_override = 0	//for general guaranteed modification of these variables
 	var/see_invisible_override = 0
 
-	var/mob/transmogged_from	//holds a reference to the mob that this mob used to be before being transmogrified
+	var/obj/transmog_body_container/transmogged_from	//holds a reference to the container holding the mob that this mob used to be before being transmogrified
 	var/mob/transmogged_to		//holds a reference to the mob which holds a reference to this mob in its transmogged_from var
 
 /mob/resetVariables()

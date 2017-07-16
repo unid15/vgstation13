@@ -101,7 +101,6 @@ var/image/list/w_overlays = list("wet" = image('icons/effects/water.dmi',icon_st
 		getFromPool(/obj/effect/decal/cleanable/dirt,src)
 
 turf/simulated/floor/update_icon()
-	overlays -= floor_overlay
 
 	if(lava)
 		return
@@ -111,6 +110,8 @@ turf/simulated/floor/update_icon()
 	else if(is_plating())
 		if(!broken && !burnt)
 			icon_state = icon_plating //Because asteroids are 'platings' too.
+	else if(is_slime_floor())
+		icon_state = "tile-slime"
 	else if(is_light_floor())
 		var/obj/item/stack/tile/light/T = floor_tile
 		if(T.on)
@@ -171,7 +172,6 @@ turf/simulated/floor/update_icon()
 	else if(is_arcade_floor())
 		if(!broken && !burnt)
 			icon_state = "arcade"
-
 	else if(is_wood_floor())
 		if(!broken && !burnt)
 			if( !(icon_state in wood_icons) )
@@ -260,6 +260,12 @@ turf/simulated/floor/update_icon()
 		return 1
 	return 0
 
+/turf/simulated/floor/is_slime_floor()
+	if(istype(floor_tile,/obj/item/stack/tile/slime))
+		return 1
+	else
+		return 0
+
 /turf/simulated/floor/is_plating()
 	if(!floor_tile)
 		return 1
@@ -293,6 +299,10 @@ turf/simulated/floor/update_icon()
 	else if(is_grass_floor())
 		src.icon_state = "sand[pick("1","2","3")]"
 		broken = 1
+	else if(is_slime_floor())
+		spawn(rand(2,10))
+			make_plating()
+		return //slime burns up or completely loses form
 	else if(is_mineral_floor())
 		if(material=="diamond")
 			return //diamond doesn't break
@@ -585,7 +595,7 @@ turf/simulated/floor/update_icon()
 			else
 				to_chat(user, "<span class='warning'>This section is too damaged to support a tile. Use a welder to fix the damage.</span>")
 	else if(istype(C, /obj/item/stack/cable_coil))
-		if(is_plating())
+		if(can_place_cables())
 			var/obj/item/stack/cable_coil/coil = C
 			coil.turf_place(src, user)
 		else
@@ -596,6 +606,16 @@ turf/simulated/floor/update_icon()
 			new /obj/item/weapon/ore/glass(src)
 			new /obj/item/weapon/ore/glass(src) //Make some sand if you shovel grass
 			to_chat(user, "<span class='notice'>You shovel the grass.</span>")
+			if(prob(10))
+				var/to_spawn = pick(
+					/obj/item/seeds/carrotseed,
+					/obj/item/weapon/reagent_containers/food/snacks/grown/carrot,
+					/obj/item/seeds/potatoseed,
+					/obj/item/weapon/reagent_containers/food/snacks/grown/potato,
+					/obj/item/seeds/whitebeetseed,
+					/obj/item/weapon/reagent_containers/food/snacks/grown/whitebeet,)
+				new to_spawn(src)
+				to_chat(user, "<span class='notice'>Something falls out of the grass!</span>")
 			make_plating()
 		else
 			to_chat(user, "<span class='warning'>You cannot shovel this.</span>")
@@ -629,7 +649,7 @@ turf/simulated/floor/update_icon()
 					set_light(3)
 					icon_state = "uranium_inactive"
 					for(var/mob/living/L in range(2,src)) //Weak radiation
-						L.apply_effect(3,IRRADIATE,0)
+						L.apply_radiation(3,RAD_EXTERNAL)
 					flick("uranium_active",src)
 					spawn(20)
 						set_light(0)
@@ -679,7 +699,7 @@ turf/simulated/floor/update_icon()
 	return
 
 /turf/simulated/floor/adjust_slowdown(mob/living/L, current_slowdown)
-	//Phazon floors make movement instant
+	//Phazon floors make movement faster
 	if(floor_tile)
 		return floor_tile.adjust_slowdown(L, current_slowdown)
 

@@ -295,7 +295,13 @@
 	if(INVOKE_EVENT(on_damaged, list("type" = TOX, "amount" = amount)))
 		return 0
 
-	toxloss = min(max(toxloss + (amount * tox_damage_modifier), 0),(maxHealth*2))
+	var/mult = 1
+	if(ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if(H.species.tox_mod)
+			mult = H.species.tox_mod
+
+	toxloss = min(max(toxloss + (amount * tox_damage_modifier * mult), 0),(maxHealth*2))
 
 /mob/living/proc/setToxLoss(var/amount)
 	if(status_flags & GODMODE)
@@ -324,6 +330,11 @@
 
 	if(INVOKE_EVENT(on_damaged, list("type" = CLONE, "amount" = amount)))
 		return 0
+
+	if(ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if(isslimeperson(H))
+			amount = 0
 
 	cloneloss = min(max(cloneloss + (amount * clone_damage_modifier), 0),(maxHealth*2))
 
@@ -536,6 +547,7 @@ Thanks.
 	germ_level = 0
 	next_pain_time = 0
 	radiation = 0
+	rad_tick = 0
 	nutrition = 400
 	bodytemperature = 310
 	sdisabilities = 0
@@ -704,34 +716,45 @@ Thanks.
 							if(M && secondarypull)
 								M.start_pulling(secondarypull)
 
-							//this is the gay blood on floor shit -- Added back --snx
-							var/turf/TM = M.loc
-							if (TM.has_gravity() && M.lying && (prob(M.getBruteLoss() / 3)))
-								if(prob(6)) //Too much bloooooood
-									blood_splatter(M.loc,M)
-									if(ishuman(M))
-										var/mob/living/carbon/H = M
-										var/blood_volume = round(H:vessel.get_reagent_amount("blood"))
-										if(blood_volume > 0)
-											H:vessel.remove_reagent("blood",2)
-											M.visible_message("<span class='warning'>\The [M] loses some blood from being dragged!</span>")
-								if(prob(50))
-									if(isturf(M.loc))
-										M.adjustBruteLoss(1)
-										M.visible_message("<span class='warning'>\The [M]'s wounds worsen from being dragged!</span>")
-							if(M.pull_damage())
-								if(prob(25))
-									M.adjustBruteLoss(2)
-									M.visible_message("<span class='danger'>\The [M]'s wounds worsen terribly from being dragged!</span>")
-									if(prob(25))
-										if(isturf(M.loc))
-											blood_splatter(M.loc,M,1)
-											if(ishuman(M))
-												var/mob/living/carbon/H = M
-												var/blood_volume = round(H:vessel.get_reagent_amount("blood"))
-												if(blood_volume > 0)
-													H:vessel.remove_reagent("blood",5)
-													M.visible_message("<span class='danger'>\The [M] loses a lot of blood from being dragged!</span>")
+							/* Drag damage is here!*/
+							var/mob/living/carbon/human/HM = M
+							var/list/damaged_organs = HM.get_broken_organs()
+							var/list/bleeding_organs = HM.get_bleeding_organs()
+							if (T.has_gravity() && HM.lying)
+
+								if (damaged_organs.len)
+									if(!HM.isincrit())
+										if(prob(HM.getBruteLoss() / 5)) //Chance for damage based on current damage
+											for(var/datum/organ/external/damagedorgan in damaged_organs)
+												if((damagedorgan.brute_dam) < damagedorgan.max_damage) //To prevent organs from accruing thousands of damage
+													HM.apply_damage(2, BRUTE, damagedorgan)
+													HM.visible_message("<span class='warning'>The wounds on \the [HM]'s [damagedorgan.display_name] worsen from being dragged!</span>")
+													HM.UpdateDamageIcon()
+									else
+										if(prob(15))
+											for(var/datum/organ/external/damagedorgan in damaged_organs)
+												if((damagedorgan.brute_dam) < damagedorgan.max_damage)
+													HM.apply_damage(4, BRUTE, damagedorgan)
+													HM.visible_message("<span class='warning'>The wounds on \the [HM]'s [damagedorgan.display_name] worsen terribly from being dragged!</span>")
+													add_logs(src, HM, "caused drag damage to", admin = (M.ckey))
+													HM.UpdateDamageIcon()
+
+								if (bleeding_organs.len && !(HM.species.anatomy_flags & NO_BLOOD))
+									var/blood_volume = round(HM:vessel.get_reagent_amount("blood"))
+									/*Sometimes species with NO_BLOOD get blood, hence weird check*/
+									if(blood_volume > 0)
+										if(isturf(HM.loc))
+											if(!HM.isincrit())
+												if(prob(blood_volume / 89.6)) //Chance to bleed based on blood remaining
+													blood_splatter(HM.loc,HM)
+													HM.vessel.remove_reagent("blood",4)
+													HM.visible_message("<span class='warning'>\The [HM] loses some blood from being dragged!</span>")
+											else
+												if(prob(blood_volume / 44.8)) //Crit mode means double chance of blood loss
+													blood_splatter(HM.loc,HM,1)
+													HM.vessel.remove_reagent("blood",8)
+													HM.visible_message("<span class='danger'>\The [HM] loses a lot of blood from being dragged!</span>")
+													add_logs(src, HM, "caused drag damage bloodloss to", admin = (HM.ckey))
 					else
 						if (pulling)
 							pulling.Move(T, get_dir(pulling, T))
@@ -1098,10 +1121,10 @@ Thanks.
 					if(do_after(CM, CM, 50))
 						if(!CM.handcuffed || CM.locked_to)
 							return
-						CM.visible_message("<span class='danger'>[CM] manages to break the handcuffs!</span>",
-										   "<span class='notice'>You successfuly break your handcuffs.</span>")
+						CM.visible_message("<span class='danger'>[CM] manages to break \the [CM.handcuffed]!</span>",
+										   "<span class='notice'>You successfully break \the [CM.handcuffed].</span>")
 						CM.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
-						var/obj/item/weapon/handcuffs/cuffs = CM.handcuffed
+						var/obj/item/cuffs = CM.handcuffed
 						CM.drop_from_inventory(cuffs)
 						if(!cuffs.gcDestroyed) //If these were not qdel'd already (exploding cuffs, anyone?)
 							qdel(cuffs)
@@ -1110,23 +1133,23 @@ Thanks.
 
 
 			else
-				var/obj/item/weapon/handcuffs/HC = CM.handcuffed
-				var/breakouttime = HC.breakouttime
-				if(!(breakouttime))
-					breakouttime = 1200 //Default
-				CM.visible_message("<span class='danger'>[CM] attempts to remove [HC]!</span>",
-								   "<span class='warning'>You attempt to remove [HC] (this will take around [(breakouttime)/600] minutes and you need to stand still).</span>",
+				var/obj/item/HC = CM.handcuffed
+				var/resist_time = HC.restraint_resist_time
+				if(!(resist_time))
+					resist_time = 2 MINUTES //Default
+				CM.visible_message("<span class='danger'>[CM] attempts to remove \the [HC]!</span>",
+								   "<span class='warning'>You attempt to remove \the [HC] (this will take around [(resist_time)/600] minutes and you need to stand still).</span>",
 								   self_drugged_message="<span class='warning'>You attempt to regain control of your hands (this will take a while).</span>")
 				spawn(0)
-					if(do_after(CM,CM, breakouttime))
+					if(do_after(CM,CM, resist_time))
 						if(!CM.handcuffed || CM.locked_to)
 							return // time leniency for lag which also might make this whole thing pointless but the server
-						CM.visible_message("<span class='danger'>[CM] manages to remove [HC]!</span>",
-										   "<span class='notice'>You successfuly remove [HC].</span>",
+						CM.visible_message("<span class='danger'>[CM] manages to remove \the [HC]!</span>",
+										   "<span class='notice'>You successfully remove \the [HC].</span>",
 										   self_drugged_message="<span class='notice'>You successfully regain control of your hands.</span>")
 						CM.drop_from_inventory(HC)
 					else
-						CM.simple_message("<span class='warning'>Your uncuffing attempt was interrupted.</span>",
+						CM.simple_message("<span class='warning'>Your attempt to remove \the [HC] was interrupted.</span>",
 							"<span class='warning'>Your attempt to regain control of your hands was interrupted. Damn it!</span>")
 
 		else if(CM.legcuffed && CM.canmove && CM.special_delayer.blocked())
@@ -1235,7 +1258,7 @@ Thanks.
 	static_overlay.override = 1
 	static_overlays["letter"] = static_overlay
 
-/mob/living/Bump(atom/movable/AM as mob|obj)
+/mob/living/to_bump(atom/movable/AM as mob|obj)
 	spawn(0)
 		if (now_pushing || !loc || size <= SIZE_TINY)
 			return
@@ -1518,7 +1541,18 @@ Thanks.
 /mob/proc/CheckSlip()
 	return 0
 
+/mob/living/proc/turn_into_statue(forever = 0, force)
+	if(!force)
+		if(mob_property_flags & (MOB_UNDEAD|MOB_CONSTRUCT|MOB_ROBOTIC|MOB_HOLOGRAPHIC|MOB_SUPERNATURAL))
+			return 0
 
+	spawn()
+		if(forever)
+			new /obj/structure/closet/statue/eternal(get_turf(src), src)
+		else
+			new /obj/structure/closet/statue(get_turf(src), src)
+
+	return 1
 
 /*
 	How this proc that I took from /tg/ works:
@@ -1587,6 +1621,7 @@ Thanks.
 		"fire_stacks",
 		"specialsauce",
 		"silent",
-		"is_ventcrawling")
+		"is_ventcrawling",
+		"suiciding")
 
 	reset_vars_after_duration(resettable_vars, duration)

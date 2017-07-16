@@ -270,6 +270,7 @@
 	icon_state = "mankini"
 	_color = "mankini"
 	siemens_coefficient = 1
+	body_parts_covered = 0
 
 /obj/item/clothing/suit/xenos
 	name = "xenos suit"
@@ -471,7 +472,7 @@
 	body_parts_covered = ARMS|LEGS|FULL_TORSO|FEET|HANDS
 	desc = "First developed by NASA in 1964 for the US space program!"
 	heat_conductivity = 0 // Good luck losing heat in this!
-	slowdown = 10
+	slowdown = HARDSUIT_SLOWDOWN_BULKY
 	var/bearpelt = 0
 
 /obj/item/clothing/suit/spaceblanket/attackby(obj/item/W,mob/user)
@@ -488,7 +489,7 @@
 	desc = "Using an Advanced Space Blanket requires Advanced Power Blanket Training."
 	icon_state = "goodblanket"
 	heat_conductivity = 0
-	slowdown = 5
+	slowdown = HARDSUIT_SLOWDOWN_MED
 	bearpelt = 1
 
 /obj/item/clothing/suit/storage/trader
@@ -504,13 +505,13 @@
 	max_combined_w_class = 28
 	storage_slots = 14
 	actions_types = list(/datum/action/item_action/show_wares)
-	
+
 /datum/action/item_action/show_wares/Trigger()
 	var/obj/item/clothing/suit/storage/trader/T = target
 	if(!istype(T))
 		return
 	T.show_wares()
-	
+
 /obj/item/clothing/suit/storage/trader/proc/show_wares()
 	var/mob/M = loc
 	if(!istype(M) || M.incapacitated())

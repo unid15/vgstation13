@@ -13,6 +13,34 @@
 	var/list/hidden_records = list()
 	var/list/coin_records = list()
 
+//////CUSTOM PACKS///////
+
+/obj/structure/vendomatpack/custom
+	name = "empty recharge pack"
+	targetvendomat = /obj/machinery/vending/sale
+	icon_state = "generic"
+
+/obj/structure/vendomatpack/custom/New()
+	..()
+	overlays += image('icons/obj/vending_pack.dmi',"emptypack")
+
+/obj/structure/vendomatpack/custom/attackby(obj/item/O, mob/user)
+	if(istype(O))
+		if(user.drop_item(O, src))
+			stock.Add(O)
+
+/obj/structure/vendomatpack/custom/attack_hand(mob/user)
+	var/selected_item = input("Select an item to remove", "[src]") as null|anything in contents
+	var/obj/item/I = selected_item
+	if(I != null && loc)
+		if(!Adjacent(user))
+			return
+		if(istype(I, /obj/item/weapon/disk/nuclear))
+			to_chat(user, "<span class='notice'>Suddenly your hand stops responding. You can't do it.</span>")
+			return
+		I.forceMove(get_turf(src))
+
+
 /obj/structure/vendomatpack/undefined
 	//a placeholder for vending machines that don't have their own recharge packs
 
@@ -159,6 +187,16 @@
 	name = "Chapelvend recharge pack"
 	targetvendomat = /obj/machinery/vending/chapel
 	icon_state = "chapel"
+
+/obj/structure/vendomatpack/barbervend
+	name = "Barbervend recharge pack"
+	targetvendomat = /obj/machinery/vending/barber
+	icon_state = "barber"
+
+/obj/structure/vendomatpack/makeup
+	name = "Shuo-Cai Cosmetics recharge pack"
+	targetvendomat = /obj/machinery/vending/makeup
+	icon_state = "makeup"
 
 //////EMPTY PACKS//////
 

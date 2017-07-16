@@ -749,7 +749,9 @@ its easier to just keep the beam vertical.
 	gender = gend
 
 /mob/living/carbon/human/setGender(gend = FEMALE)
-	if(gend == PLURAL || gend == NEUTER || (gend != FEMALE && gend != MALE))
+	if(species.gender)	//species-level gender override
+		gend = species.gender
+	else if(gend == PLURAL || gend == NEUTER || (gend != FEMALE && gend != MALE))
 		CRASH("SOMEBODY SET A BAD GENDER ON [src] [gend]")
 	// var/old_gender = src.gender
 	src.gender = gend
@@ -818,3 +820,6 @@ its easier to just keep the beam vertical.
 		return FALSE
 	else
 		return TRUE
+
+/atom/proc/to_bump()
+	return
