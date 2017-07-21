@@ -1475,11 +1475,14 @@ var/list/slot_equipment_priority = list( \
 			lying = (category.flags & LOCKED_SHOULD_LIE) ? TRUE : FALSE //A lying value that !=1 will break this
 
 
-	else if(isUnconscious() || knockdown || paralysis || resting || !can_stand)
+	else if(isUnconscious() || knockdown || paralysis || !can_stand) //Fully knocked out - drop to the ground, can't move, stop pulling
 		stop_pulling()
 		lying = 1
 		canmove = 0
-	else if(stunned)
+	else if(resting) //Lying down voluntarily - drop to the ground, can't move
+		lying = 1
+		canmove = 0
+	else if(stunned) //Stunned - can't move
 //		lying = 0
 		canmove = 0
 	else if(captured)

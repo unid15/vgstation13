@@ -180,8 +180,6 @@ var/global/list/whitelisted_species = list("Human")
 			qdel(I)
 		H.internal_organs_by_name.len=0
 	if(H.grasp_organs)
-		for(var/datum/organ/I in H.grasp_organs)
-			qdel(I)
 		H.grasp_organs.len = 0
 
 

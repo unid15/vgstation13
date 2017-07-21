@@ -458,6 +458,18 @@
 /mob/living/proc/get_organ(zone)
 	return
 
+//A proc that turns organ strings into a list of organ datums
+//The organ strings can be fed in as arguments, or as a list
+
+//get_organs("r_leg", "l_leg", "head")
+//get_organs(list("r_leg", "l_leg", "head"))
+//get_organs(list("r_leg", "l_leg"), "head")
+
+//all return the same thing: list([right leg datum], [left_leg_datum])
+//the returned list CAN contain duplicate instances
+/mob/living/proc/get_organs(organs)
+	return list()
+
 /mob/living/proc/get_organ_target()
 	var/t = src.zone_sel.selecting
 	if ((t in list( "eyes", "mouth" )))
