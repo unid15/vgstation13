@@ -808,6 +808,14 @@ Note that amputating the affected organ does in fact remove the infection from t
 			   HELPERS
 ****************************************************/
 
+//Returns true if this organ's species has a specific mutation
+/datum/organ/external/proc/has_mutation(mutation)
+	if(!species)
+		return FALSE
+
+	return (species.default_mutations.Find(mutation))
+
+
 /datum/organ/external/proc/release_restraints()
 	if(owner.handcuffed && body_part in list(ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT))
 		owner.visible_message(\
@@ -1436,6 +1444,11 @@ obj/item/weapon/organ
 	var/brute_dam
 	var/burn_dam
 	var/status
+
+	//List of attached organs
+	//It doesn't contain the whole tree, only the organs attached to this one
+	var/list/obj/item/weapon/organ/children = list()
+
 
 	//List of attached organs
 	//It doesn't contain the whole tree, only the organs attached to this one
