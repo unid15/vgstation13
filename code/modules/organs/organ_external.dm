@@ -663,7 +663,10 @@ Note that amputating the affected organ does in fact remove the infection from t
 		return
 	if(body_part == (UPPER_TORSO || LOWER_TORSO)) //We can't lose either, those cannot be amputated and will cause extremely serious problems
 		return
+
 	var/datum/species/species = src.species || owner.species
+	var/obj/item/weapon/organ/organ //Dropped limb object
+
 	if(override)
 		status |= ORGAN_DESTROYED
 	if(status & ORGAN_DESTROYED)
