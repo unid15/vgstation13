@@ -14,8 +14,7 @@
 
 	hud_state = "wiz_fist"
 
-/spell/targeted/fist/cast(var/list/targets)
-	var/mob/living/L = holder
-	if(istype(L))
+/spell/targeted/fist/cast(var/list/targets, mob/living/user)
+	if(istype(user))
 		for(var/mob/living/target in targets)
-			L.unarmed_attack_mob(target)
+			user.unarmed_attack_mob(target)

@@ -14,6 +14,9 @@
 
 	var/damage_done = damage/(blocked+1)
 
+	if(!ignore_events && INVOKE_EVENT(on_damaged, list("type" = damagetype, "amount" = damage)))
+		return 0
+
 	switch(damagetype)
 		if(BRUTE)
 			adjustBruteLoss(damage_done)
